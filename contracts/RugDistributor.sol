@@ -10,15 +10,15 @@ contract RugDistributor is BasicAccessControl {
     using SafeERC20 for IERC20;
     event Mint(address indexed owner, uint256 token);
     event ZORRewarded(address indexed owner, uint256 amount);
-    event Debug(string message, address indexed sender, uint256 value);
+    event MintingCapUpdated(uint256 newCap);
 
     IERC20 public immutable pcToken;
     IERC20 public immutable zorToken;
     Rug public nftContract;
 
-    uint256 public constant MINTING_CAP = 100;
+    uint256 public MINTING_CAP = 1000;
     uint256 public constant ERC20_PRICE_NFT = 0.01 * 10 ** 18;
-    uint256 public constant ZOR_REWARD_AMOUNT = 10 * 10 ** 18;
+    uint256 public constant ZOR_REWARD_AMOUNT = 100 * 10 ** 18;
     bool public mintingPaused = false;
     uint256 private rngNonce = 0;
 
@@ -67,25 +67,18 @@ contract RugDistributor is BasicAccessControl {
             "Insufficient pcToken allowance"
         );
 
-        emit Debug("Attempting pcToken transfer", msg.sender, ERC20_PRICE_NFT);
         pcToken.safeTransferFrom(msg.sender, address(this), ERC20_PRICE_NFT);
-        emit Debug("pcToken transfer succeess", msg.sender, ERC20_PRICE_NFT);
 
         uint256 random = getRNG();
         uint256 outcome = probabilities[random % probabilities.length];
-        emit Debug("Outcome selected", msg.sender, random);
 
         if (outcome == 2) {
             uint256 tokenId = nftContract.itemsMintedCount();
-            emit Debug("Attempting NFT mint", msg.sender, tokenId);
             nftContract.mintNextToken(msg.sender);
+
             emit Mint(msg.sender, tokenId);
+
         } else {
-            emit Debug(
-                "Attempting ZOR transfer",
-                msg.sender,
-                ZOR_REWARD_AMOUNT
-            );
             require(
                 zorToken.balanceOf(address(this)) >= ZOR_REWARD_AMOUNT,
                 "Insufficient ZOR tokens"
@@ -95,6 +88,15 @@ contract RugDistributor is BasicAccessControl {
         }
 
         return true;
+    }
+
+    function updateMintingCap(uint256 _newCap) external onlyOwner {
+        if (_newCap < nftContract.itemsMintedCount()) {
+            revert("New cap must be greater than current minted count");
+        }
+        MINTING_CAP = _newCap;
+        nftContract.updateMaxCap(_newCap);
+        emit MintingCapUpdated(_newCap);
     }
 
     function adminWithdrawZOR(uint256 _amount) external onlyOwner {

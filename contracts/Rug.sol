@@ -9,14 +9,17 @@ contract Rug is ERC721, BasicAccessControl {
     using Strings for uint256;
 
     uint256 public constant START_TOKEN = 1;
-    uint256 public constant MAX_CAP = 100;
+    uint256 public MAX_CAP = 1000;
     uint256 public itemsMintedCount = 0;
     string private _baseTokenURI;
 
     event BatchMetadataUpdate(uint256 fromTokenId, uint256 toTokenId);
     event TokenMinted(address indexed owner, uint256 tokenId);
+    event MaxCapUpdated(uint256 newCap);
 
-    constructor(string memory baseURI) ERC721("Rug", "RUG") BasicAccessControl() {
+    constructor(
+        string memory baseURI
+    ) ERC721("Rug", "RUG") BasicAccessControl() {
         require(bytes(baseURI).length > 0, "Invalid baseURI");
         _baseTokenURI = baseURI;
         itemsMintedCount = START_TOKEN;
@@ -37,12 +40,24 @@ contract Rug is ERC721, BasicAccessControl {
         return true;
     }
 
+    function updateMaxCap(uint256 _newCap) external onlyModerators {
+        require(_newCap >= itemsMintedCount, "New cap must be >= minted count");
+        MAX_CAP = _newCap;
+        emit MaxCapUpdated(_newCap);
+    }
+
     function _baseURI() internal view override returns (string memory) {
         return _baseTokenURI;
     }
 
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        require(_ownerOf(tokenId) != address(0), "ERC721Metadata: URI query for nonexistent token");
-        return string(abi.encodePacked(_baseURI(), tokenId.toString(), ".json"));
+    function tokenURI(
+        uint256 tokenId
+    ) public view override returns (string memory) {
+        require(
+            _ownerOf(tokenId) != address(0),
+            "ERC721Metadata: URI query for nonexistent token"
+        );
+        return
+            string(abi.encodePacked(_baseURI(), tokenId.toString(), ".json"));
     }
 }
