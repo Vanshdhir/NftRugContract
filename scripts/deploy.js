@@ -4,15 +4,13 @@ async function main() {
   const [deployer] = await hre.ethers.getSigners();
   console.log('Deploying contracts with:', deployer.address);
 
-  const pcTokenAddress = '0x8f6EEe1A9B705CE2024422a1E9759c2ef5dA7C3E';
-  const zorTokenAddress = '0x90d729291763ee34C31E3F72F7FD939A5BBfBEf5';
-  const baseURI = 'https://magenta-rear-mole-293.mypinata.cloud/ipfs/bafybeic3vonbbaqhzewto63ekp4kji7dyci4hcsu4uqzlshzldbxfnz4wq/';
+  const zorTokenAddress = '0x07d1f327833299A5a22db588898860a6DaeC5aD6';
+  const baseURI = 'https://bafybeia6ifzuf74phactxb3nloa6kd3vwor5q67xxs65u2bapkqpo3w5oi.ipfs.w3s.link/';
 
-  // Validate token addresses
-  console.log('Validating token addresses');
-  let pcToken, zorToken;
+  // Validate token address
+  console.log('Validating zor token address');
+  let zorToken;
   try {
-    pcToken = await hre.ethers.getContractAt('IERC20', pcTokenAddress);
     zorToken = await hre.ethers.getContractAt('IERC20', zorTokenAddress);
 
   } catch (e) {
@@ -30,7 +28,7 @@ async function main() {
  
   console.log('Deploying RugDistributor');
   const RugDistributor = await hre.ethers.getContractFactory('RugDistributor');
-  const rugDistributor = await RugDistributor.deploy(rugAddress, pcTokenAddress, zorTokenAddress);
+  const rugDistributor = await RugDistributor.deploy(rugAddress, zorTokenAddress);
   await rugDistributor.waitForDeployment();
   const rugDistributorAddress = await rugDistributor.getAddress();
   console.log('RugDistributor deployed to:', rugDistributorAddress);
@@ -104,7 +102,7 @@ async function main() {
     });
     await hre.run('verify:verify', {
       address: rugDistributorAddress,
-      constructorArguments: [rugAddress, pcTokenAddress, zorTokenAddress],
+      constructorArguments: [rugAddress, zorTokenAddress],
     });
     await hre.run('verify:verify', {
       address: rugAirdropAddress,
